@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+    <title>Un deseo para vos</title>
+    <style>
+        /* --- RESET Y BASE --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%; height: 100dvh;
+            overflow: hidden;
+            font-family: 'Fredoka', sans-serif; 
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- FONDO THREE.JS --- */
+        #canvas-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* --- CONTENEDOR CENTRAL --- */
+        .center-stage {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            padding: 20px;
+        }
+
+        /* --- TEXTOS --- */
+        .text-msg {
+            color: #fff;
+            text-align: center;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 15px rgba(255, 100, 200, 0.6);
+            margin: 0;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards;
+            font-weight: 600;
+        }
+
+        .text-top {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #ffffff;
+            animation-delay: 0.5s;
+            line-height: 1.3;
+        }
+
+        .text-bottom {
+            font-size: 1.5rem;
+            margin-top: 15px;
+            color: #ffccff;
+            animation-delay: 1s;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* --- WRAPPER DE LA IMAGEN --- */
+        .jar-wrapper {
+            position: relative;
+            width: auto;
+            height: 55vh; 
+            aspect-ratio: 1080 / 1920; 
+            animation: float 6s ease-in-out infinite;
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .jar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.15));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(-10px); }
+            50% { transform: translateY(10px); }
+        }
+
+        /* --- BOTÓN --- */
+        .magic-btn {
+            position: absolute;
+            top: 55%; 
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 12px 35px;
+            font-size: 1.1rem;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255,255,255,0.4);
+            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(4px);
+        }
+        .magic-btn:active { transform: translate(-50%, -50%) scale(0.95); background: rgba(255,255,255,0.3); }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        
+        .modal-content {
+            background: rgba(30, 20, 50, 0.95);
+            padding: 35px; border-radius: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-align: center; color: white;
+            width: 85%; max-width: 350px;
+            transform: scale(0.9); opacity: 0;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); opacity: 1; }
+        .modal-text { font-size: 1.4rem; margin: 25px 0; line-height: 1.4; font-weight: 400; }
+        .close-btn {
+            background: linear-gradient(to right, #FF4081, #FF80AB);
+            border: none; color: white; padding: 12px 30px;
+            font-family: 'Fredoka', sans-serif;
+            border-radius: 30px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 64, 129, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="center-stage">
+        <p class="text-msg text-top">En este frasquito guardé un deseo para vos</p>
+        
+        <div class="jar-wrapper">
+            <img src="asset/frasquito2.png" alt="Frasco Mágico" class="jar-img">
+            <button class="magic-btn" onclick="openModal()">ABRIR</button>
+        </div>
+
+        <p class="text-msg text-bottom">Gracias por este año</p>
+    </div>
+
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <h2 style="color: #FF80AB; margin-top: 0; font-size: 2rem;">✨ Sorpresa ✨</h2>
+            <p class="modal-text">"Que el próximo año brille tanto como estas estrellas."</p>
+            <button class="close-btn" onclick="closeModal(event)">Cerrar</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // --- CONFIGURACIÓN THREE.JS ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Niebla negra para profundidad
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+        container.appendChild(renderer.domElement);
+
+        // --- GRUPO 1: FONDO MASIVO DE ESTRELLAS (Pequeñas y estáticas) ---
+        const bgStarGeo = new THREE.BufferGeometry();
+        const bgCount = 12000; // ¡Muchas más estrellas!
+        const bgPos = new Float32Array(bgCount * 3);
+        for(let i = 0; i < bgCount * 3; i++) {
+            bgPos[i] = (Math.random() - 0.5) * 2000;
+        }
+        bgStarGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));
+        
+        const bgStarMat = new THREE.PointsMaterial({ 
+            size: 1.0, // Muy pequeñitas
+            color: 0xaaaaaa, 
+            transparent: true, 
+            opacity: 0.6 
+        });
+        const bgStars = new THREE.Points(bgStarGeo, bgStarMat);
+        scene.add(bgStars);
+
+
+        // --- GRUPO 2: ESTRELLAS MÁGICAS (Brillan y palpitan) ---
+        const magicStarGeo = new THREE.BufferGeometry();
+        const magicCount = 250; // Pocas, pero especiales
+        const magicPos = new Float32Array(magicCount * 3);
+        for(let i = 0; i < magicCount * 3; i++) {
+            magicPos[i] = (Math.random() - 0.5) * 1800;
+        }
+        magicStarGeo.setAttribute('position', new THREE.BufferAttribute(magicPos, 3));
+        
+        const magicStarMat = new THREE.PointsMaterial({ 
+            size: 3.0, // Más grandes
+            color: 0xffffff, // Blanco puro brillante
+            transparent: true, 
+            opacity: 1,
+            blending: THREE.AdditiveBlending // Efecto de luz
+        });
+        const magicStars = new THREE.Points(magicStarGeo, magicStarMat);
+        scene.add(magicStars);
+
+        camera.position.z = 1;
+
+        // --- ANIMACIÓN ---
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Rotación del fondo (lenta)
+            bgStars.rotation.y += 0.0002;
+            bgStars.rotation.x += 0.00005;
+
+            // Rotación de las estrellas mágicas (un poco diferente para efecto 3D)
+            magicStars.rotation.y += 0.0003;
+            magicStars.rotation.x -= 0.0001;
+
+            // EFECTO DE PALPITAR (Brillo)
+            // Usamos seno para que suban y bajen de tamaño y opacidad suavemente
+            const pulse = Math.sin(time * 2) * 0.5 + 1; // Oscila entre 0.5 y 1.5
+            
+            magicStarMat.size = 3.0 * pulse; // Cambia tamaño
+            magicStarMat.opacity = 0.5 + (pulse * 0.3); // Cambia transparencia
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- RESIZE ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.style.height = window.innerHeight + 'px';
+        }
+        window.addEventListener('resize', onWindowResize, false);
+        onWindowResize();
+
+        // --- MODAL ---
+        function openModal() { document.getElementById('modal').classList.add('active'); }
+        function closeModal(event) {
+            if (event.target.classList.contains('modal-overlay') || event.target.classList.contains('close-btn')) {
+                document.getElementById('modal').classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
